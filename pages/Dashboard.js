@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
+  Image,
 } from "react-native";
 import React, { useState, useEffect, useCallback } from "react";
 import { useFocusEffect } from '@react-navigation/native';
@@ -20,13 +21,22 @@ const Header = ({
   greeting = "Good Morning!",
   navigation,
   user_id = user_id , 
+  role_id = role_id,
 }) => {
+  const tutorImage = require("../assets/tutor.png");
+  const studentImage = require("../assets/student.png");
 
   return (
     <View style={styles.headerContainer}>
       <View style={styles.leftContainer}>
         <View style={styles.avatarContainer}>
-          <Text style={styles.avatarText}>{userName.charAt(0)}</Text>
+          {/*<Text style={styles.avatarText}>{userName.charAt(0)}</Text>*/}
+
+          {role_id === 1 ? 
+          <Image source={tutorImage} style={styles.avatarImage} /> 
+          : 
+          <Image source={studentImage} style={styles.avatarImage} /> }
+
           <View style={styles.onlineIndicator} />
         </View>
         <View style={styles.textContainer}>
@@ -132,74 +142,80 @@ export default function Dashboard({ navigation, route }) {
     // Check if role_id is 1 (tutor)
     // -------------------------- TUTOR DASHBOARD --------------------------
     role_id === 1 ? 
-  <>
+    <>
     <ScrollView
       contentContainerStyle={styles.container}
       overScrollMode="never"
       bounces={true}
       endFillColor="#131313"
-      style={styles.scrollView}>
+      style={styles.scrollView}
+    >
       <Header
         userName={first_name}
         greeting={getGreeting()}
         navigation={navigation}
         user_id={user_id}
+        role_id={role_id}
       />
       <View style={styles.textContainer}>
         <Text style={styles.sessionText}>Sessions with Students</Text>
         {error && <Text style={styles.errorText}>Error: {error}</Text>}
       </View>
 
-      <View style={styles.CarouselContainer}>
-        <SessionsCarousel
-          sessions={sessions}
-          loading={loading}
-          currentIndex={currentIndex}
-          itemCallback={handleVisibleSession}
-        />
-      </View>
+      {/* Replace Carousel with Vertical List */}
+      <View style={styles.listContainer}>
+  {loading ? (
+    <Text style={styles.loadingText}>Loading sessions...</Text>
+  ) : (
+    sessions.map((session, index) => (
+      <TouchableOpacity
+        key={session.session_id}
+        style={styles.sessionItem}
+        onPress={() => navigation.navigate("SessionDetails", { session })}
+      >
+        <Text style={styles.sessionHeader}>Session {index + 1}</Text>
+        <Text style={styles.sessionDetail}>Subject: {session.subject}</Text>
+        <Text style={styles.sessionDetail}>
+          Date: {session.session_date}
+        </Text>
+        <Text style={styles.sessionDetail}>
+          Time: {session.start_time} - {session.end_time}
+        </Text>
+      </TouchableOpacity>
+    ))
+  )}
+</View>
+
 
       <View style={styles.rowTwo}>
-        <View style={styles.textContainer}>
-          <Text style={styles.sessionText}>Details</Text>
-        </View>
-        <View style={styles.buttonDiv}>
-          <ButtonDiv
-            date="Wednesday"
-            buttonText={
-              loading
-                ? "Loading..."
-                : currentSession.value?.session_date || "No sessions"
-            }
-            countDown="2 weeks"
-          />
-          <View style={styles.horizontalContainer}>
+          <View style={styles.textContainer}>
+            <Text style={styles.sessionText}>Details</Text>
+          </View>
+          <View style={styles.buttonDiv}>
             <ButtonDiv
-              type="wide"
-              loading={loading}
-              data={currentSession.value}
+              date="Wednesday"
+              buttonText={
+                loading
+                  ? "Loading..."
+                  : currentSession.value?.session_date || "No sessions"
+              }
+              countDown="2 weeks"
             />
-            <ButtonDiv
-              type="wide"
-              loading={loading}
-              data={currentSession.value}
-            />
+            <View style={styles.horizontalContainer}>
+              <ButtonDiv
+                type="wide"
+                loading={loading}
+                data={currentSession.value}
+              />
+              <ButtonDiv
+                type="wide"
+                loading={loading}
+                data={currentSession.value}
+              />*
+            </View>
           </View>
         </View>
-      </View>
     </ScrollView>
-
-    <SessionDrawer
-      visible={sessionVisible}
-      onClose={() => setSessionVisible(false)}
-      session={currentSession}
-      onUpdateTime={(type, newTime) => {
-        console.log(type, newTime);
-      }}
-      onCancelSession={() => {
-        console.log("Session cancelled");
-      }}
-    />
   </> : /* -------------------------- STUDENT DASHBOARD -------------------------- */ 
   <> 
       <ScrollView
@@ -213,6 +229,7 @@ export default function Dashboard({ navigation, route }) {
           greeting={getGreeting()}
           navigation={navigation}
           user_id={user_id}
+          role_id={role_id}
         />
         <View style={styles.textContainer}>
           <Text style={styles.sessionText}>Sessions with Tutors</Text>
@@ -252,7 +269,7 @@ export default function Dashboard({ navigation, route }) {
                 type="wide"
                 loading={loading}
                 data={currentSession.value}
-              />
+              />*
             </View>
           </View>
         </View>
@@ -407,4 +424,68 @@ const styles = StyleSheet.create({
   rowTwo: {
     flex: 1,
   },
+  avatarImage: {
+  width: 40, // Match the dimensions of avatarContainer
+  height: 40,
+  borderRadius: 20, // Make it circular
+},
+listContainer: {
+  paddingHorizontal: 16,
+  paddingBottom: 32,
+},
+sessionItem: {
+  backgroundColor: "#2A2A2A",
+  padding: 16,
+  borderRadius: 8,
+  marginBottom: 12,
+},
+loadingText: {
+  color: "#FFFFFF",
+  textAlign: "center",
+  marginVertical: 16,
+},
+sessionTitle: {
+  color: "#FFFFFF",
+  fontSize: 16, // Standard size for title text
+  fontWeight: "bold",
+  marginBottom: 4,
+},
+sessionDateTime: {
+  color: "#FFFFFF",
+  fontSize: 14, // Smaller font for date/time
+  opacity: 0.8, // Slight transparency for a subtle look
+  marginBottom: 2,
+},
+sessionHeader: {
+  color: "#FFFFFF",
+  fontSize: 18, // Slightly larger font for the header
+  fontWeight: "bold",
+  marginBottom: 4,
+},
+sessionDetail: {
+  color: "#FFFFFF",
+  fontSize: 14, // Uniform size for all details
+  opacity: 0.8, // Slight transparency
+  marginBottom: 2,
+},
+listContainer: {
+  paddingHorizontal: 16,
+  paddingVertical: 8,
+},
+sessionItem: {
+  backgroundColor: "#2A2A2A", // Light gray for better contrast
+  borderRadius: 8,
+  padding: 12,
+  marginBottom: 8,
+},
+loadingText: {
+  color: "#FFFFFF",
+  fontSize: 16,
+  textAlign: "center",
+  marginVertical: 20,
+},
+
+
+
+
 });
